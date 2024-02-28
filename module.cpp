@@ -24,12 +24,12 @@ void Module::setMsgId(int id)
     udpEncoder->setMsgId(id);
 }
 
-void Module::setSimTime(int time)
+void Module::setSimTime(long long time)
 {
     udpEncoder->setSimTime(time);
 }
 
-void Module::setUTCTime(int time)
+void Module::setUTCTime(long long time)
 {
     udpEncoder->setUTCTime(time);
 }
@@ -46,15 +46,4 @@ void Module::sendBroadcast(const char *data, qint64 size, quint16 port)
 void Module::sendDatagram(const char *data, qint64 size, const QHostAddress &address, quint16 port)
 {
     m_udp->writeDatagram(data, size, address, port);
-}
-
-void Module::registerDDS(QString name)
-{
-    m_topicList.append(name);
-    m_core->regDDSCallback(this, name);
-}
-
-void Module::unregisterDDS(QString name)
-{
-    m_core->unregDDSCallback(this, name);
 }

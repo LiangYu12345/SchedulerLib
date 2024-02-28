@@ -51,7 +51,7 @@ QVector<QByteArray> PacketEncoderUdp::appendPaylod(const char *buf,int len)
             m_header.length = m_unitMaxLen;
             m_buf.append((char*)&m_header,sizeof(m_header));
             m_buf.append(buf+m_unitMaxLen*(seq-1),m_unitMaxLen);
-            m_buf.append(CRC8(m_buf.data(),m_buf.length()));
+            m_buf.append(UDPCRC8(m_buf.data(),m_buf.length()));
             vecBuf.append(m_buf);
             curLen -= m_unitMaxLen;
         }
@@ -61,7 +61,7 @@ QVector<QByteArray> PacketEncoderUdp::appendPaylod(const char *buf,int len)
             m_header.length = curLen;
             m_buf.append((char*)&m_header,sizeof(m_header));
             m_buf.append(buf+m_unitMaxLen*(seq-1),curLen);
-            m_buf.append(CRC8(m_buf.data(),m_buf.length()));
+            m_buf.append(UDPCRC8(m_buf.data(),m_buf.length()));
             vecBuf.append(m_buf);
         }
         ++seq;
@@ -107,7 +107,7 @@ void PacketDecoderUdp::onAppendPacket(QByteArray buf)
             return;
         }
 
-        char crc = CRC8(strBuffer, nStrDataLen);
+        char crc = UDPCRC8(strBuffer, nStrDataLen);
         if(crc != strBuffer[nStrDataLen]){
             qDebug()<<"Msg Crc Error!";
             return;
@@ -194,7 +194,7 @@ void PacketDecoderUdp::_onParseData()
             if (m_msgData.size() >= m_unitFixLen)
             {
                 int len = 0;
-                memcpy(&len,m_msgData.data()+36,sizeof (int));
+                memcpy(&len,m_msgData.data()+32,sizeof (int));
                 if (len == m_msgData.length() - m_unitFixLen)
                     _parseData();
             }
@@ -209,7 +209,7 @@ void PacketDecoderUdp::_onParseData()
             if (m_msgData.size() >= m_unitFixLen)
             {
                 int len = 0;
-                memcpy(&len,m_msgData.data()+36,sizeof (int));
+                memcpy(&len,m_msgData.data()+32,sizeof (int));
                 if (len == m_msgData.length() - m_unitFixLen)
                     _parseData();
             }
@@ -231,7 +231,7 @@ void PacketDecoderUdp::_onParseData()
             if (m_msgData.size() >= m_unitFixLen)
             {
                 int len = 0;
-                memcpy(&len,m_msgData.data()+36,sizeof (int));
+                memcpy(&len,m_msgData.data()+32,sizeof (int));
                 if (len == m_msgData.length() - m_unitFixLen)
                     _parseData();
             }
@@ -245,7 +245,7 @@ void PacketDecoderUdp::_onParseData()
             if (m_msgData.size() >= m_unitFixLen)
             {
                 int len = 0;
-                memcpy(&len,m_msgData.data()+36,sizeof (int));
+                memcpy(&len,m_msgData.data()+32,sizeof (int));
                 if (len == m_msgData.length() - m_unitFixLen)
                     _parseData();
             }
@@ -258,7 +258,7 @@ void PacketDecoderUdp::_onParseData()
 void PacketDecoderUdp::_parseData()
 {
     int len = m_msgData.size();
-    if (CRC8(m_msgData.data(),len) == m_msgData[len-1])
+    if (UDPCRC8(m_msgData.data(),len) == m_msgData[len-1])
     {
         m_msgData.clear();
         return;
@@ -272,16 +272,9 @@ void PacketDecoderUdp::_parseData()
     int arrAll = header.arrAll;
     int arrSeq = header.arrSeq;
     int payLoadLen = header.length;
-    int msgCicle = header.msgCircle;
 
     QByteArray payLoad;
     payLoad.append(m_msgData.data() + sizeof(BasicPktHeader),payLoadLen);
-
-    auto &msgBuffer = m_mapMsgs[msgId];
-    if(msgCicle != msgBuffer.msgCicle){
-        msgBuffer.vecBufs.clear();
-        msgBuffer.msgCicle = msgCicle;
-    }
 
     if(arrAll >= arrSeq)
     {

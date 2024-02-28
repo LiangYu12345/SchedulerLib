@@ -20,10 +20,6 @@ class SCHEDULERSHARED_EXPORT Module : public QObject
 public:
     explicit Module(QObject *parent = nullptr);
 
-    /// 设置当前模块归属的Core
-    void setCore(Core *core) {m_core = core;}
-    /// 获取当前模块归属的Core
-    Core *core() {return m_core;}
 protected:
     /// 为当前模块注册UDP监听事件
     /// 参见 \see Core::registerUDP
@@ -35,14 +31,14 @@ protected:
     /// 设置消息编号
     void setMsgId(int id);
     /// 设置发包仿真时间字段
-    void setSimTime(int time);
+    void setSimTime(long long time);
     /// 设置发包UTC时间字段
-    void setUTCTime(int time);
+    void setUTCTime(long long time);
     /// 获取接收包中的参数
     /// 获取接收包的UTC时间字段
-    int getUTCTime();
+    long long getUTCTime();
     /// 获取接收包的仿真时间字段
-    int getSimTime();
+    long long getSimTime();
 
     /// 获取内置UDP套接字
     inline QUdpSocket *udpSocket() {return m_udp;}
@@ -79,6 +75,12 @@ protected:
     void setPopupWidget(QWidget *widget, Qt::Alignment align);
 
 protected:
+    /// 设置当前模块归属的Core(子类不因该调用)
+    inline void setCore(Core *core) {m_core = core;}
+    /// 获取当前模块归属的Core
+    inline Core *core() {return m_core;}
+
+protected:
     /// 加载前处理
     virtual void preLoad() {};
     /// 加载处理
@@ -93,14 +95,9 @@ protected:
     /// 卸载后处理
     virtual void postUnload() {};
 
-    void registerDDS(QString name);
-
-    void unregisterDDS(QString name);
-
     /// UDP数据事件,仅监听的数据才会触发该事件
-    virtual void UDPEvent(int identity, const QByteArray &datagram) {};
+    virtual void UDPEvent(int identity, const QByteArray &datagram){};
 
-    virtual void DDSEvent(const DDSDatagram &datagram)  {};
     /// 更新事件
     /// \param deltaMS 上一次更新距离本次更新的毫秒差
     virtual void updateEvent(int deltaMS) {};
@@ -109,8 +106,6 @@ private:
     Core       *m_core;
     QUdpSocket *m_udp;
     PacketEncoderUdp *udpEncoder;
-
-    QStringList m_topicList;
 };
 
 #endif // MODULE_H

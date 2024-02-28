@@ -49,7 +49,7 @@ struct BasicPktTail
 }
 #pragma pack()
 
-inline quint8 CRC8(const char *buf, int length)
+inline quint8 UDPCRC8(const char *buf, int length)
 {
     quint8 sum = 0;
     unsigned int nCrc = 0;
@@ -127,10 +127,10 @@ public slots:
     void onAppendPacket(QByteArray buf);
     /// 线程启动槽函数
     void onStartDecode();
-
+private slots:
     /// 解析数据槽函数
     void _onParseData();
-
+private:
     void _parseData();
 private:
     QByteArray m_headerCode;                ///< 协议包头

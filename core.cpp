@@ -25,17 +25,6 @@ Core::Core(QObject *parent) : QObject(parent),
 
 }
 
-void Core::startDDS(int ddsID)
-{
-    connect(&m_ddsNetwork, &DDSNetwork::readyRead, this, &Core::readDDSPendingDatagrams, Qt::QueuedConnection);
-    m_ddsNetwork.start(ddsID);
-}
-
-DDSNetwork *Core::getDDSNetwork()
-{
-    return &m_ddsNetwork;
-}
-
 void Core::run()
 {
     if(m_isRun)
@@ -132,7 +121,6 @@ void Core::addLoadModule(Module *module)
 bool Core::bindUDP(int port)
 {
     auto udp = new QUdpSocket(this);
-    //udp->joinMulticastGroup(QHostAddress("224.2.3.1"));
     connect(udp, &QUdpSocket::readyRead, this, &Core::readUDPPendingDatagrams, Qt::DirectConnection);  //really a Qt::DirectConnection
     if(!udp->bind(QHostAddress::Any, port, QAbstractSocket::ReuseAddressHint | QAbstractSocket::ShareAddress)) {
         qWarning() << "Can't bind to UDP with port:" << port;
@@ -155,32 +143,6 @@ bool Core::registerUDP(Module *module, int identity)
     return true;
 }
 
-void Core::regDDSCallback(Module *module, const QString &ddsTopic)
-{
-    if(module->objectName().isEmpty()) {
-        qDebug()<<"Please setObjectName() of Callback before register topic: " << ddsTopic;
-        return;
-    }
-    if(m_ddsModules.contains(ddsTopic, module)) {
-        qDebug()<<"You don't need to register DDS twice: " << ddsTopic << "for " << module->objectName();
-        return;
-    }
-    // if had ever been registerd, so register it to DDSNetwork
-    if(!m_ddsModules.contains(ddsTopic)) {
-        m_ddsNetwork.registerRead(ddsTopic.toUtf8());
-    }
-    m_ddsModules.insert(ddsTopic, module);
-}
-
-void Core::unregDDSCallback(Module *module, const QString &ddsTopic)
-{
-    m_ddsModules.remove(ddsTopic, module);
-    // if empty of one topic, so register dds topic from DDSNetwork as nobody use it
-    if(!m_ddsModules.contains(ddsTopic)) {
-        m_ddsNetwork.unregisterRead(ddsTopic.toUtf8());
-    }
-}
-
 void Core::ondistributePacket(int identity, QByteArray buf)
 {
     auto callbacks = m_udpModules.values(identity);
@@ -197,18 +159,6 @@ void Core::readUDPPendingDatagrams()
         datagram.resize(udp->pendingDatagramSize());
         udp->readDatagram(datagram.data(), datagram.size());
         emit sigReadPacket(datagram);
-    }
-}
-
-void Core::readDDSPendingDatagrams()
-{
-    while (m_ddsNetwork.hasPendingDatagrams()) {    //retreive all pending data
-        DDSDatagram datagram = m_ddsNetwork.receiveDatagram();
-        const QString &topic = datagram.topic();
-        auto modules = m_ddsModules.values(topic);
-        for(Module* item : modules) {
-            item->DDSEvent(datagram);
-        }
     }
 }
 
