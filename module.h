@@ -7,6 +7,8 @@
 #include <QUdpSocket>
 #include <QScreen>
 
+class PacketEncoderUdp;
+
 /*!
  * \brief 模块
  * \details 作为Core类的核心组成;内部默认集成一个UDP套接字
@@ -18,10 +20,30 @@ class SCHEDULERSHARED_EXPORT Module : public QObject
 public:
     explicit Module(QObject *parent = nullptr);
 
+
+    /// 设置当前模块归属的Core
+    void setCore(Core *core) {m_core = core;}
+    /// 获取当前模块归属的Core
+    Core *core() {return m_core;}
 protected:
     /// 为当前模块注册UDP监听事件
     /// 参见 \see Core::registerUDP
     bool registerUDP(int identity);
+
+    /// 设置发送包中的参数
+    /// 设置负载区最大字节数 范围[0,1400]
+    void setReserveSize(int size);
+    /// 设置消息编号
+    void setMsgId(int id);
+    /// 设置发包仿真时间字段
+    void setSimTime(int time);
+    /// 设置发包UTC时间字段
+    void setUTCTime(int time);
+    /// 获取接收包中的参数
+    /// 获取接收包的UTC时间字段
+    int getUTCTime();
+    /// 获取接收包的仿真时间字段
+    int getSimTime();
 
     /// 获取内置UDP套接字
     inline QUdpSocket *udpSocket() {return m_udp;}
@@ -63,7 +85,6 @@ protected:
     /// 获取当前模块归属的Core
     inline Core *core() {return m_core;}
 
-protected:
     /// 加载前处理
     virtual void preLoad() {};
     /// 加载处理
@@ -78,8 +99,14 @@ protected:
     /// 卸载后处理
     virtual void postUnload() {};
 
+    void registerDDS(QString name);
+
+    void unregisterDDS(QString name);
+
     /// UDP数据事件,仅监听的数据才会触发该事件
-    virtual void UDPEvent(int identity, const QByteArray &datagram){};
+    virtual void UDPEvent(int identity, const QByteArray &datagram) {};
+
+    virtual void DDSEvent(const DDSDatagram &datagram)  {};
 
     /// 更新事件
     /// \param deltaMS 上一次更新距离本次更新的毫秒差
@@ -88,6 +115,10 @@ protected:
 private:
     Core       *m_core;
     QUdpSocket *m_udp;
+    PacketEncoderUdp *udpEncoder;
+
+    QStringList m_topicList;
+
 };
 
 #endif // MODULE_H

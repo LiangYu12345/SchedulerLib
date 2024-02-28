@@ -5,8 +5,11 @@
 #include <QObject>
 #include <QMultiMap>
 #include <QTimer>
+#include "ddsnetwork.h"
 
 class Module;
+class PacketDecoderUdp;
+class QThread;
 
 /*!
  * \brief 内核
@@ -18,6 +21,10 @@ class SCHEDULERSHARED_EXPORT Core : public QObject
     Q_OBJECT
 public:
     explicit Core(QObject *parent = nullptr);
+
+    void startDDS(int ddsID);
+
+    DDSNetwork *getDDSNetwork();
 
     /// 开始运行,模块执行加载操作
     void run();
@@ -42,14 +49,25 @@ public:
     /// 给模块注册UDP监听事件
     bool registerUDP(Module *module, int identity);
 
+    void regDDSCallback(Module *module, const QString &ddsTopic);
+    void unregDDSCallback(Module *module, const QString &ddsTopic);
+private slots:
+    /// 分发数据槽函数
+    void ondistributePacket(int identity,QByteArray buf);
 signals:
     /// 模块添加信号
     void added(Module *module);
     /// 模块卸载信号
     void removed(Module *module);
 
+    /// UDP数据信号
+    void sigReadPacket(QByteArray);
+
 private:
     void readUDPPendingDatagrams();
+
+    void readDDSPendingDatagrams();
+
     void handleUpdateEvent();
 
 private:
@@ -60,6 +78,12 @@ private:
     //
     QMultiMap<int, Module*> m_modules;
     QMultiMap<int, Module*> m_udpModules;
+
+    PacketDecoderUdp      *m_udpDecoder;       ///< udp解包器
+    QThread               *m_udpDecoderThread; ///< udp解包线程
+
+    QMultiHash<QString, Module*>  m_ddsModules;  ///<用来处理DDS数据的回调<topic,Module>
+    DDSNetwork         m_ddsNetwork;
 };
 
 template<class T>
