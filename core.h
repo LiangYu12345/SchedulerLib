@@ -59,6 +59,7 @@ signals:
     void added(Module *module);
     /// 模块卸载信号
     void removed(Module *module);
+
     /// UDP数据信号
     void sigReadPacket(QByteArray);
 
@@ -66,6 +67,7 @@ private:
     void readUDPPendingDatagrams();
 
     void readDDSPendingDatagrams();
+
     void handleUpdateEvent();
 
 private:

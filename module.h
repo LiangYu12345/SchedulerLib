@@ -20,6 +20,7 @@ class SCHEDULERSHARED_EXPORT Module : public QObject
 public:
     explicit Module(QObject *parent = nullptr);
 
+
     /// 设置当前模块归属的Core
     void setCore(Core *core) {m_core = core;}
     /// 获取当前模块归属的Core
@@ -79,6 +80,11 @@ protected:
     void setPopupWidget(QWidget *widget, Qt::Alignment align);
 
 protected:
+    /// 设置当前模块归属的Core(子类不因该调用)
+    inline void setCore(Core *core) {m_core = core;}
+    /// 获取当前模块归属的Core
+    inline Core *core() {return m_core;}
+
     /// 加载前处理
     virtual void preLoad() {};
     /// 加载处理
@@ -101,6 +107,7 @@ protected:
     virtual void UDPEvent(int identity, const QByteArray &datagram) {};
 
     virtual void DDSEvent(const DDSDatagram &datagram)  {};
+
     /// 更新事件
     /// \param deltaMS 上一次更新距离本次更新的毫秒差
     virtual void updateEvent(int deltaMS) {};
@@ -111,6 +118,7 @@ private:
     PacketEncoderUdp *udpEncoder;
 
     QStringList m_topicList;
+
 };
 
 #endif // MODULE_H

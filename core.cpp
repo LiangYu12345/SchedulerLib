@@ -139,7 +139,6 @@ bool Core::bindUDP(int port)
         delete udp;
         return false;
     }
-
     return true;
 }
 
